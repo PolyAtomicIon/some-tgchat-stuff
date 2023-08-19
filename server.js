@@ -1,39 +1,59 @@
-import { ChatGPTAPI, ChatGPTConversation } from 'chatgpt';
-import TelegramBot from 'node-telegram-bot-api';
+import { ChatGPTAPI, ChatGPTUnofficialProxyAPI } from "chatgpt";
+import TelegramBot from "node-telegram-bot-api";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 (async () => {
-  const api = new ChatGPTAPI({ sessionToken: process.env.SESSION_TOKEN });
-  let conversation = new ChatGPTConversation(api);
-  await api.ensureAuth();
+  // console.log(process.env.ACCESS_TOKEN);
+  const api = new ChatGPTAPI({
+    apiKey: process.env.ACCESS_TOKEN,
+    completionParams: {
+      model: "gpt-3.5-turbo",
+      temperature: 0.5,
+      top_p: 0.8,
+    },
+  });
+
+  // console.log(res.text);
+  // await api.ensureAuth();
   const bot = new TelegramBot(process.env.BOT_TOKEN, { polling: true });
   const { first_name: botName } = await bot.getMe();
-  bot.onText(/\/chatgpt (.+)/, async (msg, match) => {
+  // console.log(botName);
+  bot.on("message", async (msg) => {
+    const text = msg?.text || "no text";
     const { id: chatId } = msg.chat;
-    console.log(new Date(), `${msg.from.username}: ${match[1]}`);
-    if (match[1] === 'new') {
-      conversation = new ChatGPTConversation(api);
-      await bot.sendMessage(chatId, 'Starting new conversation', { reply_to_message_id: msg.message_id });
+    console.log(new Date(), `${msg.from.username}: ${text}`);
+    if (text === "new") {
+      await bot.sendMessage(chatId, "Starting new conversation", {
+        reply_to_message_id: msg.message_id,
+      });
     } else {
-      await bot.sendChatAction(chatId, 'typing');
-      const typingInterval = setInterval(async () => await bot.sendChatAction(chatId, 'typing'), 5000);
+      await bot.sendChatAction(chatId, "typing");
+      // const typingInterval = setInterval(
+      //   async () => await bot.sendChatAction(chatId, "typing"),
+      //   5000
+      // );
       let response;
       try {
         let count = 0;
-        const maxTries = 5;
+        const maxTries = 1;
         while (true) {
           try {
-            response = await conversation.sendMessage(match[1]);
+            response = await api.sendMessage(text);
             break;
           } catch (error) {
-            console.log(new Date(), error.toString());
             if (++count === maxTries) throw error;
           }
         }
       } catch (error) {
         response = error.toString();
       }
-      clearInterval(typingInterval);
-      await bot.sendMessage(chatId, response, { reply_to_message_id: msg.message_id });
+      console.log(response);
+      // clearInterval(typingInterval);
+      await bot.sendMessage(chatId, response?.text || "error", {
+        reply_to_message_id: msg.message_id,
+      });
     }
   });
   console.log(new Date(), `${botName} is ready ✨`);
