@@ -1,0 +1,32 @@
+API_ENDPOINT="us-central1-aiplatform.googleapis.com"
+PROJECT_ID="macro-truck-401215"
+MODEL_ID="text-bison-32k"
+
+curl \
+-X POST \
+-H "Authorization: Bearer $(gcloud auth print-access-token)" \
+-H "Content-Type: application/json" \
+"https://${API_ENDPOINT}/v1/projects/${PROJECT_ID}/locations/us-central1/publishers/google/models/${MODEL_ID}:predict" -d \
+$'{
+    "instances": [
+        {
+            "content": "Based on the provided response, here is an evaluation of your IELTS Writing based on the four criteria:
+
+1. Task Achievement: Your response addresses both views presented in the prompt and clearly presents your opinion. You discuss the benefits of increasing sports facilities while also mentioning alternative measures to improve public health. Relevant examples are included to support your points. Overall, you have fulfilled the requirements of the task.
+
+2. Coherence & Cohesion: Your essay is well-organized with a clear introduction, body paragraphs, and conclusion. Ideas are logically connected, and cohesive devices such as linking words and phrases are used effectively. The progression of your arguments is coherent, making it easy for the reader to follow your ideas.
+
+3. Lexical Resource: Your vocabulary usage is varied and appropriate. You demonstrate a good range of vocabulary related to the topic, including terms like sedentary lifestyle, physical activity, facilities, positive attitude, etc. You also use collocations and idiomatic expressions effectively. Overall, your lexical resource is strong.
+
+4. Grammatical Range & Accuracy: Your grammar usage is generally accurate, with a variety of sentence structures employed. There are only a few minor errors or awkward phrasings, but they do not significantly affect the overall clarity or comprehension of your writing. Your sentences are generally well-formed, and you demonstrate control over grammatical structures.
+
+Based on this evaluation, your estimated IELTS Writing band score would be around 7.5 to 8.0. Please note that this is an approximate estimation and the actual score may vary depending on the holistic assessment conducted by trained examiners."
+        }
+    ],
+    "parameters": {
+        "maxOutputTokens": 1024,
+        "temperature": 0.2,
+        "topP": 0.8,
+        "topK": 40
+    }
+}'
