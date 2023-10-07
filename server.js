@@ -141,15 +141,7 @@ const handleTgMessage = async (msg) => {
   const text = msg?.text || "no text";
   const { id: chatId } = msg.chat;
   console.log(new Date(), `${msg.from.username}: ${text}`);
-  if (text === "/speaking") {
-    await bot.sendMessage(
-      chatId,
-      "Send Speaking Question, only one by one. \n , include /speaking-question command in your message.",
-      {
-        reply_to_message_id: msg.message_id,
-      }
-    );
-  } else if (text === "/speaking-question") {
+  if (text === "/speaking-question") {
     question = text;
     await bot.sendMessage(
       chatId,
@@ -192,10 +184,10 @@ const handleTgMessage = async (msg) => {
         reply_to_message_id: msg.message_id,
       }
     );
-  } else if (text === "/writing") {
+  } else if (text === "/speaking") {
     await bot.sendMessage(
       chatId,
-      `Send Writing task 2 question. \n Include /writing-question command in your message.`,
+      "Send Speaking Question, only one by one. \n , include /speaking-question command in your message.",
       {
         reply_to_message_id: msg.message_id,
       }
@@ -243,10 +235,14 @@ const handleTgMessage = async (msg) => {
         reply_to_message_id: msg.message_id,
       }
     );
-  } else if (text.includes("/change-writing")) {
-    const promptTemplate = fs.readFileSync(type + "Prompt.txt", "utf8");
-  } else if (text.includes("/change-speaking")) {
-    const promptTemplate = fs.readFileSync(type + "Prompt.txt", "utf8");
+  } else if (text === "/writing") {
+    await bot.sendMessage(
+      chatId,
+      `Send Writing task 2 question. \n Include /writing-question command in your message.`,
+      {
+        reply_to_message_id: msg.message_id,
+      }
+    );
   } else {
     await bot.sendChatAction(chatId, "typing");
     // const typingInterval = setInterval(
