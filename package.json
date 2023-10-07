@@ -6,10 +6,14 @@
   "license": "MIT",
   "type": "module",
   "dependencies": {
+    "@ffmpeg-installer/ffmpeg": "^1.1.0",
     "@google-cloud/aiplatform": "^3.2.0",
+    "@google-cloud/speech": "^6.0.2",
     "chatgpt": "^5.2.5",
     "dotenv": "^16.3.1",
+    "fluent-ffmpeg": "^2.1.2",
     "google-auth-library": "^9.1.0",
+    "mic": "^2.1.2",
     "node-telegram-bot-api": "^0.60.0",
     "nodemon": "^3.0.1"
   }

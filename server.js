@@ -2,8 +2,12 @@ import { ChatGPTAPI, ChatGPTUnofficialProxyAPI } from "chatgpt";
 import TelegramBot from "node-telegram-bot-api";
 import dotenv from "dotenv";
 import { v1, helpers } from "@google-cloud/aiplatform";
+import { v1p1beta1 } from "@google-cloud/speech";
+import fs from "fs";
+import fetch from "node-fetch";
 
 const { PredictionServiceClient } = v1;
+const { SpeechClient } = v1p1beta1;
 
 dotenv.config();
 
@@ -15,6 +19,74 @@ const bot = new TelegramBot(process.env.BOT_TOKEN, {
   polling: true,
   port: 3000,
 });
+
+async function syncRecognizeWithEnhancedModel(audioFilePath) {
+  // audio file is oga format
+  const encoding = "OGG_OPUS";
+  const sampleRateHertz = 16000;
+  const languageCode = "en-US";
+
+  const config = {
+    encoding: encoding,
+    languageCode: languageCode,
+    useEnhanced: true,
+    model: "phone_call",
+    sampleRateHertz: 48000,
+  };
+
+  const client = new SpeechClient({
+    apiEndpoint: process.env.SPEECH_ENDPOINT,
+  });
+
+  const gcsUri = audioFilePath;
+  console.log(audioFilePath);
+
+  // download file from telegram - audioFilePath
+  const file = fs.createWriteStream("speech_sample.ogg");
+
+  // Make a fetch request to the URL
+  const audioResponse = await fetch(audioFilePath);
+
+  if (!audioResponse.ok) {
+    throw new Error(`HTTP error! Status: ${audioResponse.status}`);
+  }
+
+  // Create a writable stream to write data to the file
+  const fileStream = fs.createWriteStream("speech_sample.ogg");
+
+  // Use the pipe method to pipe the audioResponse body to the file stream
+  audioResponse.body.pipe(fileStream);
+  let text = "Could not recognize the speech, try again later";
+  await new Promise((resolve, reject) => {
+    // Listen for the 'finish' event to know when the file write is complete
+    fileStream.on("finish", async () => {
+      console.log(`File saved as ${audioFilePath}`);
+      const audio = {
+        content: fs.readFileSync("speech_sample.ogg").toString("base64"),
+        // uri: audioFilePath,
+      };
+
+      const request = {
+        config: config,
+        audio: audio,
+      };
+
+      // Detects speech in the audio file
+      const [response] = await client.recognize(request);
+      // console.log(response);
+      // response.results.forEach((result) => {
+      //   const alternative = result.alternatives[0];
+      //   console.log(alternative?.transcript);
+      // });
+      // [END speech_transcribe_enhanced_model]
+
+      text = response.results[0].alternatives[0].transcript;
+      resolve();
+    });
+  });
+
+  return text;
+}
 
 const requestVertexAI = async (text) => {
   // Instantiates a client
@@ -112,8 +184,25 @@ const handleTgMessage = async (msg) => {
   const { first_name: botName } = await bot.getMe();
   // console.log(botName);
 
-  bot.on("message", handleTgMessage);
+  bot.on("text", handleTgMessage);
   bot.on("web_app_data", handleTgMessage);
+  bot.on("voice", async (msg) => {
+    console.log("voice handling");
+    const voice = await bot.getFile(msg.voice.file_id);
+    // console.log(voice);
+    const { id: chatId } = msg.chat;
+
+    const audioFilePath = `https://api.telegram.org/file/bot${process.env.BOT_TOKEN}/${voice.file_path}`;
+    const text = await syncRecognizeWithEnhancedModel(audioFilePath);
+
+    await bot.sendMessage(
+      chatId,
+      text || "Could not recognize, try later please",
+      {
+        reply_to_message_id: msg.message_id,
+      }
+    );
+  });
 
   console.log(new Date(), `${botName} is ready ✨`);
 })();
