@@ -149,8 +149,7 @@ const handleTgMessage = async (msg) => {
         reply_to_message_id: msg.message_id,
       }
     );
-  }
-  if (text === "/speaking-question") {
+  } else if (text === "/speaking-question") {
     question = text;
     await bot.sendMessage(
       chatId,
@@ -159,8 +158,7 @@ const handleTgMessage = async (msg) => {
         reply_to_message_id: msg.message_id,
       }
     );
-  }
-  if (text === "/speaking-voice") {
+  } else if (text === "/speaking-voice") {
     await bot.sendChatAction(chatId, "typing");
     const prompt = generatePrompt("speaking", question, text);
 
@@ -194,8 +192,7 @@ const handleTgMessage = async (msg) => {
         reply_to_message_id: msg.message_id,
       }
     );
-  }
-  if (text === "/writing") {
+  } else if (text === "/writing") {
     await bot.sendMessage(
       chatId,
       `Send Writing task 2 question. \n Include /writing-question command in your message.`,
@@ -203,8 +200,7 @@ const handleTgMessage = async (msg) => {
         reply_to_message_id: msg.message_id,
       }
     );
-  }
-  if (text === "/writing-question") {
+  } else if (text === "/writing-question") {
     question = text;
     await bot.sendMessage(
       chatId,
@@ -213,8 +209,7 @@ const handleTgMessage = async (msg) => {
         reply_to_message_id: msg.message_id,
       }
     );
-  }
-  if (text === "/writing-text") {
+  } else if (text === "/writing-text") {
     await bot.sendChatAction(chatId, "typing");
     const prompt = generatePrompt("writing", question, text);
 
@@ -248,11 +243,9 @@ const handleTgMessage = async (msg) => {
         reply_to_message_id: msg.message_id,
       }
     );
-  }
-  if (text.includes("/change-writing")) {
+  } else if (text.includes("/change-writing")) {
     const promptTemplate = fs.readFileSync(type + "Prompt.txt", "utf8");
-  }
-  if (text.includes("/change-speaking")) {
+  } else if (text.includes("/change-speaking")) {
     const promptTemplate = fs.readFileSync(type + "Prompt.txt", "utf8");
   } else {
     await bot.sendChatAction(chatId, "typing");
