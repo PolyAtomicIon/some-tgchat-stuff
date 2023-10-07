@@ -20,6 +20,14 @@ const bot = new TelegramBot(process.env.BOT_TOKEN, {
   port: 3000,
 });
 
+const generatePrompt = (question, answer, type) => {
+  // read from file
+  const promptTemplate = fs.readFileSync(type + "Prompt.txt", "utf8");
+  promptTemplate.replace("{{Task}}", question);
+  promptTemplate.replace("{{Answer}}", answer);
+  return prompt;
+};
+
 async function syncRecognizeWithEnhancedModel(audioFilePath) {
   // audio file is oga format
   const encoding = "OGG_OPUS";
@@ -127,14 +135,125 @@ const requestVertexAI = async (text) => {
   return await callPredict();
 };
 
+let question, answer;
+
 const handleTgMessage = async (msg) => {
   const text = msg?.text || "no text";
   const { id: chatId } = msg.chat;
   console.log(new Date(), `${msg.from.username}: ${text}`);
-  if (text === "new") {
-    await bot.sendMessage(chatId, "Starting new conversation", {
-      reply_to_message_id: msg.message_id,
-    });
+  if (text === "/speaking") {
+    await bot.sendMessage(
+      chatId,
+      "Send Speaking Question, only one by one. \n , include /speaking-question command in your message.",
+      {
+        reply_to_message_id: msg.message_id,
+      }
+    );
+  }
+  if (text === "/speaking-question") {
+    question = text;
+    await bot.sendMessage(
+      chatId,
+      "Send Voice message as your answer for speaking task question, include /speaking-voice command in your message.",
+      {
+        reply_to_message_id: msg.message_id,
+      }
+    );
+  }
+  if (text === "/speaking-voice") {
+    await bot.sendChatAction(chatId, "typing");
+    const prompt = generatePrompt("speaking", question, text);
+
+    let response;
+    try {
+      let count = 0;
+      const maxTries = 1;
+      while (true) {
+        try {
+          // open ai api
+          // response = await api.sendMessage(text);
+
+          // vertex ai
+          response = {
+            text: await requestVertexAI(prompt),
+          };
+
+          break;
+        } catch (error) {
+          if (++count === maxTries) throw error;
+        }
+      }
+    } catch (error) {
+      response = error.toString();
+    }
+
+    await bot.sendMessage(
+      chatId,
+      `Here is the your evaluatation for given question and your speech: \n ${response?.text}`,
+      {
+        reply_to_message_id: msg.message_id,
+      }
+    );
+  }
+  if (text === "/writing") {
+    await bot.sendMessage(
+      chatId,
+      `Send Writing task 2 question. \n Include /writing-question command in your message.`,
+      {
+        reply_to_message_id: msg.message_id,
+      }
+    );
+  }
+  if (text === "/writing-question") {
+    question = text;
+    await bot.sendMessage(
+      chatId,
+      `Send Your essay for the question \n Include /writing-text command in your message.`,
+      {
+        reply_to_message_id: msg.message_id,
+      }
+    );
+  }
+  if (text === "/writing-text") {
+    await bot.sendChatAction(chatId, "typing");
+    const prompt = generatePrompt("writing", question, text);
+
+    let response;
+    try {
+      let count = 0;
+      const maxTries = 1;
+      while (true) {
+        try {
+          // open ai api
+          // response = await api.sendMessage(text);
+
+          // vertex ai
+          response = {
+            text: await requestVertexAI(prompt),
+          };
+
+          break;
+        } catch (error) {
+          if (++count === maxTries) throw error;
+        }
+      }
+    } catch (error) {
+      response = error.toString();
+    }
+
+    await bot.sendMessage(
+      chatId,
+      `Here is the your evaluatation for given question and your essay: \n ${response?.text}`,
+      {
+        reply_to_message_id: msg.message_id,
+      }
+    );
+  }
+  if (text.includes("/change-writing")) {
+    const promptTemplate = fs.readFileSync(type + "Prompt.txt", "utf8");
+  }
+  if (text.includes("/change-speaking")) {
+    const promptTemplate = fs.readFileSync(type + "Prompt.txt", "utf8");
   } else {
     await bot.sendChatAction(chatId, "typing");
     // const typingInterval = setInterval(
@@ -185,7 +304,7 @@ const handleTgMessage = async (msg) => {
   // console.log(botName);
 
   bot.on("text", handleTgMessage);
-  bot.on("web_app_data", handleTgMessage);
+  // bot.on("web_app_data", handleTgMessage);
   bot.on("voice", async (msg) => {
     console.log("voice handling");
     const voice = await bot.getFile(msg.voice.file_id);
@@ -193,7 +312,10 @@ const handleTgMessage = async (msg) => {
     const { id: chatId } = msg.chat;
 
     const audioFilePath = `https://api.telegram.org/file/bot${process.env.BOT_TOKEN}/${voice.file_path}`;
-    const text = await syncRecognizeWithEnhancedModel(audioFilePath);
+    const text =
+      `This is recognized text, please edit and resend it: \n 
+      \n /speaking-voice \n` +
+      (await syncRecognizeWithEnhancedModel(audioFilePath));
 
     await bot.sendMessage(
       chatId,

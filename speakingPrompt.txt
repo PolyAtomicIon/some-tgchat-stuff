@@ -1,0 +1,13 @@
+Explanation of IELTS Writing Evaluation:
+
+The IELTS writing session is scored from 0 to 9 by trained examiners. Your writing is assessed based on Task Achievement, Coherence & Cohesion, Lexical Resource, and Grammatical Range & Accuracy. These criteria measure how well you address the task, organize your ideas, use vocabulary, and apply grammar. The average of these scores determines your overall band score.
+
+Prompt for IELTS Writing Evaluation:
+
+To evaluate your IELTS writing, provide:
+
+1. Task Prompt: {{Task}}
+   
+2. Your Answer: {{Answer}}
+
+Please assess my response and estimate my IELTS Writing band score considering the criteria mentioned earlier.
