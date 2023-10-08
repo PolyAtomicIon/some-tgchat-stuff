@@ -20,12 +20,45 @@ const bot = new TelegramBot(process.env.BOT_TOKEN, {
   port: 3000,
 });
 
-const generatePrompt = (question, answer, type) => {
+const optionsGenerator = (msg) => ({
+  reply_markup: JSON.stringify({
+    keyboard: [
+      [
+        {
+          text: "Writing task 1",
+          web_app: {
+            url: `https://unlock.devhouse.kz/?chatId=${msg.chat.id}&taskName=writing-task-1`,
+          },
+        },
+      ],
+      [
+        {
+          text: "Writing task 2",
+          web_app: {
+            url: `https://unlock.devhouse.kz/?chatId=${msg.chat.id}&taskName=writing-task-2`,
+          },
+        },
+      ],
+      [
+        {
+          text: "Speaking",
+          web_app: {
+            url: `https://unlock.devhouse.kz/?chatId=${msg.chat.id}&taskName=speaking-prep`,
+          },
+        },
+      ],
+    ],
+  }),
+  parse_mode: "HTML",
+});
+
+const generatePrompt = (type, question, answer) => {
   // read from file
-  const promptTemplate = fs.readFileSync(type + "Prompt.txt", "utf8");
-  promptTemplate.replace("{{Task}}", question);
-  promptTemplate.replace("{{Answer}}", answer);
-  return prompt;
+  let promptTemplate = fs.readFileSync(type + "Prompt.txt", "utf8");
+  promptTemplate = promptTemplate.replace("{{Task}}", question);
+  promptTemplate = promptTemplate.replace("{{Answer}}", answer);
+  console.log(promptTemplate);
+  return promptTemplate;
 };
 
 async function syncRecognizeWithEnhancedModel(audioFilePath) {
@@ -57,6 +90,7 @@ async function syncRecognizeWithEnhancedModel(audioFilePath) {
 
   if (!audioResponse.ok) {
     throw new Error(`HTTP error! Status: ${audioResponse.status}`);
+    return;
   }
 
   // Create a writable stream to write data to the file
@@ -88,7 +122,7 @@ async function syncRecognizeWithEnhancedModel(audioFilePath) {
       // });
       // [END speech_transcribe_enhanced_model]
 
-      text = response.results[0].alternatives[0].transcript;
+      text = response.results[0]?.alternatives[0]?.transcript ?? "error";
       resolve();
     });
   });
@@ -141,142 +175,203 @@ const handleTgMessage = async (msg) => {
   const text = msg?.text || "no text";
   const { id: chatId } = msg.chat;
   console.log(new Date(), `${msg.from.username}: ${text}`);
-  if (text === "/speaking-question") {
-    question = text;
-    await bot.sendMessage(
-      chatId,
-      "Send Voice message as your answer for speaking task question, include /speaking-voice command in your message.",
-      {
-        reply_to_message_id: msg.message_id,
-      }
-    );
-  } else if (text === "/speaking-voice") {
-    await bot.sendChatAction(chatId, "typing");
-    const prompt = generatePrompt("speaking", question, text);
-
-    let response;
+  if (text.includes("/start")) {
     try {
-      let count = 0;
-      const maxTries = 1;
-      while (true) {
-        try {
-          // open ai api
-          // response = await api.sendMessage(text);
-
-          // vertex ai
-          response = {
-            text: await requestVertexAI(prompt),
-          };
-
-          break;
-        } catch (error) {
-          if (++count === maxTries) throw error;
-        }
-      }
+      await bot.sendMessage(
+        msg.chat.id,
+        "Welcome to english Unlock IELTS evaluation bot!",
+        optionsGenerator(msg)
+      );
     } catch (error) {
-      response = error.toString();
+      console.log(error);
     }
-
-    await bot.sendMessage(
-      chatId,
-      `Here is the your evaluatation for given question and your speech: \n ${response?.text}`,
-      {
-        reply_to_message_id: msg.message_id,
-      }
-    );
-  } else if (text === "/speaking") {
-    await bot.sendMessage(
-      chatId,
-      "Send Speaking Question, only one by one. \n , include /speaking-question command in your message.",
-      {
-        reply_to_message_id: msg.message_id,
-      }
-    );
-  } else if (text === "/writing-question") {
-    question = text;
-    await bot.sendMessage(
-      chatId,
-      `Send Your essay for the question \n Include /writing-text command in your message.`,
-      {
-        reply_to_message_id: msg.message_id,
-      }
-    );
-  } else if (text === "/writing-text") {
-    await bot.sendChatAction(chatId, "typing");
-    const prompt = generatePrompt("writing", question, text);
-
-    let response;
-    try {
-      let count = 0;
-      const maxTries = 1;
-      while (true) {
-        try {
-          // open ai api
-          // response = await api.sendMessage(text);
-
-          // vertex ai
-          response = {
-            text: await requestVertexAI(prompt),
-          };
-
-          break;
-        } catch (error) {
-          if (++count === maxTries) throw error;
-        }
-      }
-    } catch (error) {
-      response = error.toString();
-    }
-
-    await bot.sendMessage(
-      chatId,
-      `Here is the your evaluatation for given question and your essay: \n ${response?.text}`,
-      {
-        reply_to_message_id: msg.message_id,
-      }
-    );
-  } else if (text === "/writing") {
-    await bot.sendMessage(
-      chatId,
-      `Send Writing task 2 question. \n Include /writing-question command in your message.`,
-      {
-        reply_to_message_id: msg.message_id,
-      }
-    );
-  } else {
-    await bot.sendChatAction(chatId, "typing");
-    // const typingInterval = setInterval(
-    //   async () => await bot.sendChatAction(chatId, "typing"),
-    //   5000
-    // );
-    let response;
-    try {
-      let count = 0;
-      const maxTries = 1;
-      while (true) {
-        try {
-          // open ai api
-          // response = await api.sendMessage(text);
-
-          // vertex ai
-          response = {
-            text: await requestVertexAI(text),
-          };
-
-          break;
-        } catch (error) {
-          if (++count === maxTries) throw error;
-        }
-      }
-    } catch (error) {
-      response = error.toString();
-    }
-    console.log(response);
-    // clearInterval(typingInterval);
-    await bot.sendMessage(chatId, response?.text || "error", {
-      reply_to_message_id: msg.message_id,
-    });
   }
+  // if (text.includes("/speaking-question")) {
+  //   question = text;
+  //   await bot.sendMessage(
+  //     chatId,
+  //     "Send Voice message as your answer for speaking task question, include /speaking-voice command in your message.",
+  //     {
+  //       reply_to_message_id: msg.message_id,
+  //     }
+  //   );
+  // } else if (text.includes("/speaking-voice")) {
+  //   await bot.sendChatAction(chatId, "typing");
+  //   const prompt = generatePrompt("speaking", question, text);
+
+  //   let response;
+  //   try {
+  //     let count = 0;
+  //     const maxTries = 1;
+  //     while (true) {
+  //       try {
+  //         // open ai api
+  //         // response = await api.sendMessage(text);
+
+  //         // vertex ai
+  //         response = {
+  //           text: await requestVertexAI(prompt),
+  //         };
+
+  //         break;
+  //       } catch (error) {
+  //         if (++count === maxTries) throw error;
+  //       }
+  //     }
+  //   } catch (error) {
+  //     response = error.toString();
+  //   }
+
+  //   await bot.sendMessage(
+  //     chatId,
+  //     `Here is the your evaluatation for given question and your speech: \n ${response?.text}`,
+  //     {
+  //       reply_to_message_id: msg.message_id,
+  //     }
+  //   );
+  // } else if (text.includes("/speaking")) {
+  //   await bot.sendMessage(
+  //     chatId,
+  //     "Send Speaking Question, only by one. \n , include /speaking-question command in your message.",
+  //     {
+  //       reply_to_message_id: msg.message_id,
+  //     }
+  //   );
+  // } else if (text.includes("/writing-question")) {
+  //   question = text;
+  //   await bot.sendMessage(
+  //     chatId,
+  //     `Send Your essay for the question \n Include /writing-text command in your message.`,
+  //     {
+  //       reply_to_message_id: msg.message_id,
+  //     }
+  //   );
+  // } else if (text.includes("/writing-text")) {
+  //   await bot.sendChatAction(chatId, "typing");
+  //   const prompt = generatePrompt("writing", question, text);
+
+  //   let response;
+  //   try {
+  //     let count = 0;
+  //     const maxTries = 1;
+  //     while (true) {
+  //       try {
+  //         // open ai api
+  //         // response = await api.sendMessage(text);
+
+  //         // vertex ai
+  //         response = {
+  //           text: await requestVertexAI(prompt),
+  //         };
+
+  //         break;
+  //       } catch (error) {
+  //         if (++count === maxTries) throw error;
+  //       }
+  //     }
+  //   } catch (error) {
+  //     response = error.toString();
+  //   }
+
+  //   await bot.sendMessage(
+  //     chatId,
+  //     `Here is the your evaluatation for given question and your essay: \n ${response?.text}`,
+  //     {
+  //       reply_to_message_id: msg.message_id,
+  //     }
+  //   );
+  // } else if (text.includes("/writing")) {
+  // } else {
+  //   await bot.sendChatAction(chatId, "typing");
+  //   // const typingInterval = setInterval(
+  //   //   async () => await bot.sendChatAction(chatId, "typing"),
+  //   //   5000
+  //   // );
+  //   let response;
+  //   try {
+  //     let count = 0;
+  //     const maxTries = 1;
+  //     while (true) {
+  //       try {
+  //         // open ai api
+  //         // response = await api.sendMessage(text);
+
+  //         // vertex ai
+  //         response = {
+  //           text: await requestVertexAI(text),
+  //         };
+
+  //         break;
+  //       } catch (error) {
+  //         if (++count === maxTries) throw error;
+  //       }
+  //     }
+  //   } catch (error) {
+  //     response = error.toString();
+  //   }
+  //   console.log(response);
+  //   // clearInterval(typingInterval);
+  //   await bot.sendMessage(chatId, response?.text || "error", {
+  //     reply_to_message_id: msg.message_id,
+  //   });
+  // }
+};
+
+const handleWebMessage = async (msg) => {
+  console.log("handling web message");
+  const text = msg?.web_app_data.data || "no text";
+  const { id: chatId } = msg.chat;
+
+  const data = JSON.parse(text);
+  let response;
+  console.log(data);
+
+  try {
+    question = data.question;
+    answer = data.answer;
+    const type = data.type;
+
+    if (type === "speaking-prep") {
+      await bot.sendMessage(
+        chatId,
+        "Send Voice message as your answer for speaking task question.",
+        {
+          reply_to_message_id: msg.message_id,
+        }
+      );
+      return;
+    }
+
+    await bot.sendChatAction(chatId, "typing");
+    const prompt = generatePrompt(type, question, answer);
+
+    let count = 0;
+    const maxTries = 1;
+    while (true) {
+      try {
+        // open ai api
+        // response = await api.sendMessage(text);
+
+        // vertex ai
+        response = {
+          text: await requestVertexAI(prompt),
+        };
+
+        break;
+      } catch (error) {
+        if (++count === maxTries) throw error;
+      }
+    }
+  } catch (error) {
+    response = error.toString();
+    console.log(response);
+  }
+
+  await bot.sendMessage(
+    chatId,
+    response.text || "Error ",
+    optionsGenerator(msg)
+  );
 };
 
 (async () => {
@@ -292,27 +387,87 @@ const handleTgMessage = async (msg) => {
   const { first_name: botName } = await bot.getMe();
   // console.log(botName);
 
+  bot.on("web_app_data", handleWebMessage);
   bot.on("text", handleTgMessage);
-  // bot.on("web_app_data", handleTgMessage);
   bot.on("voice", async (msg) => {
     console.log("voice handling");
     const voice = await bot.getFile(msg.voice.file_id);
     // console.log(voice);
     const { id: chatId } = msg.chat;
+    try {
+      await bot.sendMessage(
+        chatId,
+        "We are processing your audio, please wait...",
+        {
+          reply_to_message_id: msg.message_id,
+        }
+      );
+      await bot.sendChatAction(chatId, "typing");
 
-    const audioFilePath = `https://api.telegram.org/file/bot${process.env.BOT_TOKEN}/${voice.file_path}`;
-    const text =
-      `This is recognized text, please edit and resend it: \n 
-      \n /speaking-voice \n` +
-      (await syncRecognizeWithEnhancedModel(audioFilePath));
+      const audioFilePath = `https://api.telegram.org/file/bot${process.env.BOT_TOKEN}/${voice.file_path}`;
 
-    await bot.sendMessage(
-      chatId,
-      text || "Could not recognize, try later please",
-      {
-        reply_to_message_id: msg.message_id,
+      let count = 0;
+      const maxTries = 1;
+      let recognizedText;
+      while (true) {
+        try {
+          recognizedText = await syncRecognizeWithEnhancedModel(audioFilePath);
+          break;
+        } catch (error) {
+          if (++count === maxTries) throw error;
+        }
       }
-    );
+      if (!recognizedText) {
+        await bot.sendMessage(
+          chatId,
+          "Could not recognize the speech, try again later",
+          {
+            reply_to_message_id: msg.message_id,
+          }
+        );
+        return;
+      }
+      const text =
+        `This is recognized text, please edit and resend it: ` + recognizedText;
+      console.log(
+        `https://unlock.devhouse.kz/?chatId=${msg.chat.id}&question=${question}&answer=${recognizedText}&taskName=speaking`
+      );
+
+      let url = `https://unlock.devhouse.kz/?chatId=${msg.chat.id}&question=${question}&answer=${recognizedText}&taskName=speaking`;
+      url = encodeURI(url);
+
+      const options = {
+        reply_markup: JSON.stringify({
+          keyboard: [
+            [
+              {
+                text: "Edit your speech",
+                web_app: {
+                  url,
+                },
+              },
+            ],
+            [
+              {
+                text: "Donate",
+                web_app: {
+                  url: "https://kaspi.kz/transfers/categories/kaspi-client?destCardNumber=4400430112506974&requisiteInputMethod=scan-card-camera",
+                },
+              },
+            ],
+          ],
+        }),
+        parse_mode: "HTML",
+      };
+
+      await bot.sendMessage(
+        chatId,
+        text || "Could not recognize, try later please",
+        options
+      );
+    } catch (error) {
+      console.log(error);
+    }
   });
 
   console.log(new Date(), `${botName} is ready ✨`);

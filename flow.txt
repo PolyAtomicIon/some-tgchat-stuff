@@ -1,0 +1,6 @@
+1. open web app link
+2. input text information - task 2, speaking, task1 + graph builder
+3. w1, w2 send results as web link
+4. ask for voice message
+4.1 open web link to edit file 
+5. send results

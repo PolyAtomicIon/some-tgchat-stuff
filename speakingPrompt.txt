@@ -1,13 +1,13 @@
-Explanation of IELTS Writing Evaluation:
+Explanation of IELTS Speaking Evaluation:
 
-The IELTS writing session is scored from 0 to 9 by trained examiners. Your writing is assessed based on Task Achievement, Coherence & Cohesion, Lexical Resource, and Grammatical Range & Accuracy. These criteria measure how well you address the task, organize your ideas, use vocabulary, and apply grammar. The average of these scores determines your overall band score.
+The IELTS Speaking session is scored from 0 to 9 by trained examiners. Your Speaking is assessed based on Task Achievement, Coherence & Cohesion, Lexical Resource, and Grammatical Range & Accuracy. These criteria measure how well you address the task, organize your ideas, use vocabulary, and apply grammar. The average of these scores determines your overall band score.
 
-Prompt for IELTS Writing Evaluation:
+Prompt for IELTS Speaking Evaluation:
 
-To evaluate your IELTS writing, provide:
+To evaluate your IELTS Speaking, provide:
 
 1. Task Prompt: {{Task}}
    
 2. Your Answer: {{Answer}}
 
-Please assess my response and estimate my IELTS Writing band score considering the criteria mentioned earlier.
+Please assess my response and estimate my IELTS Speaking band score considering the criteria mentioned earlier.
