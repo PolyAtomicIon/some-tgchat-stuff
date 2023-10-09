@@ -72,13 +72,19 @@ const generateSamplesList = (actionType) => {
       ],
       ...keyboard,
     ];
-  }
 
-  return {
-    reply_markup: JSON.stringify({
-      keyboard,
-    }),
-  };
+    return {
+      reply_markup: JSON.stringify({
+        keyboard,
+      }),
+    };
+  } else {
+    return {
+      reply_markup: JSON.stringify({
+        inline_keyboard: keyboard,
+      }),
+    };
+  }
 };
 const generatePromptEditorList = () => {
   const prompts = ["writing-task-1", "writing-task-2", "speaking"];
@@ -494,9 +500,6 @@ const handleVoiceMessage = async (msg) => {
 (async () => {
   const { first_name: botName } = await bot.getMe();
 
-  bot.on("web_app_data", handleWebMessage);
-  bot.on("text", handleTgMessage);
-  bot.on("voice", handleVoiceMessage);
   bot.on("callback_query", async (msg) => {
     const { id: chatId } = msg.message.chat;
     const data = msg.data;
@@ -562,6 +565,9 @@ const handleVoiceMessage = async (msg) => {
       );
     }
   });
+  bot.on("web_app_data", handleWebMessage);
+  bot.on("text", handleTgMessage);
+  bot.on("voice", handleVoiceMessage);
 
   console.log(new Date(), `${botName} is ready ✨`);
 })();
