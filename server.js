@@ -5,6 +5,69 @@ import { v1, helpers } from "@google-cloud/aiplatform";
 import { v1p1beta1 } from "@google-cloud/speech";
 import fs from "fs";
 import fetch from "node-fetch";
+import express from "express";
+
+const app = express();
+const port = 3011;
+
+dotenv.config();
+
+app.get("/prompt/:type", (req, res) => {
+  const type = req.params.type;
+  let text = fs.readFileSync(type + "Prompt.txt", "utf8");
+  text = text.replace(/(?:\r\n|\r|\n)/g, " ");
+  while (text.includes("&")) {
+    text = text.replace("&", "and");
+  }
+  res.status(200);
+  // send as json
+  res.send({ prompt: text });
+});
+app.post("/prompt/:type", (req, res) => {
+  try {
+    const type = req.params.type;
+    const prompt = req.body.prompt;
+    changePrompt(type, prompt);
+    res.status(200);
+    res.send("success");
+  } catch (error) {
+    console.log(error);
+  }
+});
+app.get("/samples", (req, res) => {
+  let rawdata = fs.readFileSync("./samples/speaking.json");
+  let samples = JSON.parse(rawdata);
+  res.status(200);
+  res.send(samples);
+});
+app.post("/samples/add", (req, res) => {
+  const sample = req.body.sample;
+  addSample(sample);
+  res.status(200);
+  res.send("success");
+});
+app.post("/samples/edit/:id", (req, res) => {
+  try {
+    const index = req.params.id;
+    const sample = req.body.sample;
+    speakingSamples[index] = sample;
+    fs.writeFileSync("./speaking.json", JSON.stringify(speakingSamples));
+    res.send(200);
+    res.send("success");
+  } catch (error) {}
+});
+app.delete("/samples/delete/:id", (req, res) => {
+  try {
+    const index = req.params.id;
+    deleteSample(index);
+    res.status(200);
+    res.send("success");
+  } catch (error) {}
+});
+
+app.listen(port, () => {
+  console.log(`Example app listening at http://localhost:${port}`);
+});
 
 // speaking json from samples
 let rawSpeakingSampledata = fs.readFileSync("./samples/speaking.json");
@@ -29,7 +92,7 @@ let question,
 
 const bot = new TelegramBot(process.env.BOT_TOKEN, {
   polling: true,
-  port: 3000,
+  port,
 });
 
 const generateSamplesList = (actionType) => {
@@ -317,19 +380,20 @@ const handleTgMessage = async (msg) => {
       `Choose speaking sample number:`,
       generateSamplesList("speaking-choose-index")
     );
-  } else if (text === "/admin") {
-    await bot.sendMessage(
-      chatId,
-      `Choose speaking sample number to edit:`,
-      generateSamplesList("edit-sample-index")
-    );
-  } else if (text === "/prompt") {
-    await bot.sendMessage(
-      chatId,
-      `Change promt for:`,
-      generatePromptEditorList()
-    );
   }
+  // else if (text === "/admin") {
+  //   await bot.sendMessage(
+  //     chatId,
+  //     `Choose speaking sample number to edit:`,
+  //     generateSamplesList("edit-sample-index")
+  //   );
+  // } else if (text === "/prompt") {
+  //   await bot.sendMessage(
+  //     chatId,
+  //     `Change promt for:`,
+  //     generatePromptEditorList()
+  //   );
+  // }
 };
 const handleWebMessage = async (msg) => {
   console.log("handling web message");
