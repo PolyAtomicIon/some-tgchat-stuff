@@ -11,6 +11,8 @@ const app = express();
 const port = 3011;
 
 dotenv.config();
+// config express to use body-parser
+app.use(express.json());
 
 app.get("/prompt/:type", (req, res) => {
   const type = req.params.type;
