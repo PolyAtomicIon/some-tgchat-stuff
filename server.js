@@ -13,6 +13,12 @@ const port = 3011;
 dotenv.config();
 // config express to use body-parser
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+// config express to use cors()
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  next();
+});
 
 app.get("/prompt/:type", (req, res) => {
   const type = req.params.type;
