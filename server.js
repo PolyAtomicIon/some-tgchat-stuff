@@ -6,6 +6,7 @@ import { v1p1beta1 } from "@google-cloud/speech";
 import fs from "fs";
 import fetch from "node-fetch";
 import express from "express";
+import cors from "cors";
 
 const app = express();
 const port = 3011;
@@ -19,6 +20,7 @@ app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "*");
   next();
 });
+app.use(cors());
 
 app.get("/prompt/:type", (req, res) => {
   const type = req.params.type;
