@@ -33,7 +33,7 @@ app.get("/prompt/:type", (req, res) => {
   // send as json
   res.send({ prompt: text });
 });
-app.get("/prompt/result", (req, res) => {
+app.get("/result", (req, res) => {
   let text = fs.readFileSync("result.txt", "utf8");
   text = text.replace(/(?:\r\n|\r|\n)/g, " ");
   while (text.includes("&")) {
