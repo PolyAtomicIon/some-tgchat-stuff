@@ -62,8 +62,7 @@ app.post("/samples/edit/:id", (req, res) => {
     const sample = req.body.sample;
     speakingSamples[index] = sample;
     fs.writeFileSync("./speaking.json", JSON.stringify(speakingSamples));
-    res.send(200);
-    res.send("success");
+    res.sendStatus(200);
   } catch (error) {}
 });
 app.delete("/samples/delete/:id", (req, res) => {
