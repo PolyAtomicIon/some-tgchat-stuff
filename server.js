@@ -33,6 +33,16 @@ app.get("/prompt/:type", (req, res) => {
   // send as json
   res.send({ prompt: text });
 });
+app.get("/prompt/result", (req, res) => {
+  let text = fs.readFileSync("result.txt", "utf8");
+  text = text.replace(/(?:\r\n|\r|\n)/g, " ");
+  while (text.includes("&")) {
+    text = text.replace("&", "and");
+  }
+  res.status(200);
+  // send as json
+  res.send({ prompt: text });
+});
 app.post("/prompt/:type", (req, res) => {
   try {
     const type = req.params.type;
@@ -209,7 +219,8 @@ const optionsGenerator = (msg, addResultToMessage, text) => {
     while (text.includes("&")) {
       text = text.replace("&", "and");
     }
-    let url = `${baseUrl}/result/?chatId=${msg.chat.id}&question=${question}&answer=${answer}&result=${text}&taskName=${taskName}&donationLink=${donationLink}`;
+    fs.writeFileSync("result.txt", text);
+    let url = `${baseUrl}/result/?chatId=${msg.chat.id}&question=${question}&answer=${answer}&taskName=${taskName}&donationLink=${donationLink}`;
     url = encodeURI(url);
     keyboard.push([
       {
