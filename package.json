@@ -7,7 +7,7 @@
   "type": "module",
   "dependencies": {
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
-    "@google-cloud/aiplatform": "^3.2.0",
+    "@google-cloud/aiplatform": "^3.5.0",
     "@google-cloud/speech": "^6.0.2",
     "chatgpt": "^5.2.5",
     "cors": "^2.8.5",
